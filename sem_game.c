@@ -14,12 +14,12 @@
 
 #define KEY 0xDAB42069
 
-// union semun {
-//   int                 val;      /*  Value for SETVAL                */
-//   struct semid_ds    *buf;      /*  Buffer for IPC_STAT, IPC_SET    */
-//   unsigned short     *array;    /*  Array for GETALL, SETALL        */
-//   struct seminfo     *__buf;    /*  Buffer for IPC_INFO             */
-// };
+union semun {
+  int                 val;      /*  Value for SETVAL                */
+  struct semid_ds    *buf;      /*  Buffer for IPC_STAT, IPC_SET    */
+  unsigned short     *array;    /*  Array for GETALL, SETALL        */
+  struct seminfo     *__buf;    /*  Buffer for IPC_INFO             */
+};
 
 int main() {
   // Get semaphore
@@ -50,24 +50,26 @@ int main() {
     return 1;
   }
 
+  // get length of last line
   int* data = shmat(shmid, (void*)0, 0);
   int length = data[0];
   printf("length of last line: %d\n", length);
 
+  // print last line
   char* last_line = story_text + strlen(story_text) - length;
-
   printf("Last line in story:\n%s\n", last_line);
 
+  // gets new line from user
   printf("Your line:\n");
   char* new_line = calloc(sizeof(char), 2049);
   fgets(new_line, 2048, stdin);
   new_line[2047] = '\n';
   int new_line_length = strlen(new_line);
-  printf("new line length: %d\n", new_line_length);
 
   // updates line length in shared memory
   data[0] = new_line_length;
 
+  // writes new line to file
   int write_status = write(fd, new_line, new_line_length);
   if (write_status == -1) {
     printf("write_error: %s\n", strerror(errno));
@@ -76,5 +78,6 @@ int main() {
   // upping the semaphore
   sbuf->sem_op = 1;
   semop(sem_desc, sbuf, 1);
-
+  
+  return 0;
 }

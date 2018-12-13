@@ -14,12 +14,12 @@
 
 #define KEY 0xDAB42069
 
-// union semun {
-//   int                 val;      /*  Value for SETVAL                */
-//   struct semid_ds    *buf;      /*  Buffer for IPC_STAT, IPC_SET    */
-//   unsigned short     *array;    /*  Array for GETALL, SETALL        */
-//   struct seminfo     *__buf;    /*  Buffer for IPC_INFO             */
-// };
+union semun {
+  int                 val;      /*  Value for SETVAL                */
+  struct semid_ds    *buf;      /*  Buffer for IPC_STAT, IPC_SET    */
+  unsigned short     *array;    /*  Array for GETALL, SETALL        */
+  struct seminfo     *__buf;    /*  Buffer for IPC_INFO             */
+};
 
 // -c
 int create_game() {
@@ -36,6 +36,7 @@ int create_game() {
     printf("Error: %s\n", strerror(errno));
     return 1;
   }
+  // set semaphore value
   union semun sem_data;
   sem_data.val = 1;
   int semctl_status = semctl(sem_desc, 0, SETVAL, sem_data);
@@ -68,8 +69,8 @@ int remove_game() {
 
   // Displaying story
   int fd = open("story.txt", O_RDONLY);
-  char* story_text = calloc(sizeof(char), 2048);
-  read(fd, story_text, 2047);
+  char* story_text = calloc(sizeof(char), 20480);
+  read(fd, story_text, 20479);
   printf("Story:\n%s\n", story_text);
   free(story_text);
 
