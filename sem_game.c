@@ -14,6 +14,13 @@
 
 #define KEY 0xDAB42069
 
+// union semun {
+//   int                 val;      /*  Value for SETVAL                */
+//   struct semid_ds    *buf;      /*  Buffer for IPC_STAT, IPC_SET    */
+//   unsigned short     *array;    /*  Array for GETALL, SETALL        */
+//   struct seminfo     *__buf;    /*  Buffer for IPC_INFO             */
+// };
+
 int main() {
   // Get semaphore
   int sem_desc = semget(KEY, 1, 0);
@@ -22,7 +29,7 @@ int main() {
   struct sembuf* sbuf = calloc(sizeof(struct sembuf), 1);
   sbuf->sem_num = 0;
   sbuf->sem_op = -1;
-  sbuf->sem_flg = 0;
+  sbuf->sem_flg = SEM_UNDO;
   // This should wait until memory becomes available
   int sem_op_status = semop(sem_desc, sbuf, 1);
 
@@ -32,7 +39,7 @@ int main() {
     return 1;
   }
 
-  int fd = open("story.txt", O_WRONLY | O_APPEND);
+  int fd = open("story.txt", O_RDWR | O_APPEND);
   if (fd == -1) {
     printf("open error: %s\n", strerror(errno));
   }
@@ -45,8 +52,9 @@ int main() {
 
   int* data = shmat(shmid, (void*)0, 0);
   int length = data[0];
+  printf("length of last line: %d\n", length);
 
-  char* last_line = story_text + lseek(fd, length, SEEK_END);
+  char* last_line = story_text + strlen(story_text) - length;
 
   printf("Last line in story:\n%s\n", last_line);
 
@@ -57,17 +65,16 @@ int main() {
   int new_line_length = strlen(new_line);
   printf("new line length: %d\n", new_line_length);
 
-  union semun* sem_data = calloc(sizeof(union semun), 1);
-  sem_data->val = new_line_length;
-
-  int semctl_status = semctl(sem_desc, 0, SETVAL, sem_data);
-  if (semctl_status == -1) {
-    printf("%s\n", strerror(errno));
-  }
+  // updates line length in shared memory
+  data[0] = new_line_length;
 
   int write_status = write(fd, new_line, new_line_length);
   if (write_status == -1) {
-    printf("%s\n", strerror(errno));
+    printf("write_error: %s\n", strerror(errno));
   }
+
+  // upping the semaphore
+  sbuf->sem_op = 1;
+  semop(sem_desc, sbuf, 1);
 
 }

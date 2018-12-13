@@ -9,7 +9,7 @@ run:
 	./play
 
 clean:
-	-rm -rf control play
+	-rm -rf control play story.txt
 
 all:
 	make clean

@@ -31,10 +31,16 @@ int create_game() {
   }
 
   // Making semaphore
-  int sem_desc = semget(KEY, 1, IPC_CREAT);
+  int sem_desc = semget(KEY, 1, IPC_CREAT | IPC_EXCL | 0644);
   if (sem_desc == -1) {
     printf("Error: %s\n", strerror(errno));
     return 1;
+  }
+  union semun sem_data;
+  sem_data.val = 1;
+  int semctl_status = semctl(sem_desc, 0, SETVAL, sem_data);
+  if (semctl_status == -1) {
+    printf("semctl error: %s\n", strerror(errno));
   }
 
   // Making file
@@ -55,7 +61,7 @@ int remove_game() {
   struct sembuf* sbuf = calloc(sizeof(struct sembuf), 1);
   sbuf->sem_num = 0;
   sbuf->sem_op = -1;
-  sbuf->sem_flg = 0;
+  sbuf->sem_flg = SEM_UNDO;
   // This should wait until memory becomes available
   int sem_op_status = semop(sem_desc, sbuf, 1);
   free(sbuf);
@@ -115,11 +121,15 @@ int main(int argc, char* argv[]) {
   if (!strcmp(argv[1], "-c")) {
     if (create_game()) { return 1; }
   }
-  if (!strcmp(argv[1], "-r")) {
+  else if (!strcmp(argv[1], "-r")) {
     if (remove_game()) { return 1; }
   }
-  if (!strcmp(argv[1], "-v")) {
+  else if (!strcmp(argv[1], "-v")) {
     if (view_story()) { return 1; }
+  }
+  else {
+    printf("You need the flags -c, -r, or -v\n");
+    return 1;
   }
   return 0;
 }
