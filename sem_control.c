@@ -12,8 +12,10 @@
 #include <sys/sem.h>
 #include <sys/shm.h>
 
+// key
 #define KEY 0xDAB42069
 
+// struct
 union semun {
   int                 val;      /*  Value for SETVAL                */
   struct semid_ds    *buf;      /*  Buffer for IPC_STAT, IPC_SET    */
@@ -21,7 +23,7 @@ union semun {
   struct seminfo     *__buf;    /*  Buffer for IPC_INFO             */
 };
 
-// -c
+// create(-c)
 int create_game() {
   // Making shared memory
   int shmid = shmget(KEY, sizeof(int), 0644 | IPC_CREAT);
@@ -53,7 +55,7 @@ int create_game() {
   return 0;
 }
 
-// -r
+// remove(-r) will remove text file and print the story
 int remove_game() {
   // Get semaphore
   int sem_desc = semget(KEY, 1, 0);
@@ -99,7 +101,7 @@ int remove_game() {
   return 0;
 }
 
-//  -v
+//  verbose(-v) will print the contents of the story.txt file
 int view_story() {
   // Displaying story
   int fd = open("story.txt", O_RDONLY);

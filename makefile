@@ -1,19 +1,19 @@
-compile:
-	gcc -o control sem_control.c
-	gcc -o play sem_game.c
+all: sem_control.o sem_game.o
+	gcc sem_control.o -o control
+	gcc sem_game.o
 
-control:
-	./setup $(args)
+sem_control.o:
+	gcc -c sem_control.c
+
+sem_game.o:
+	gcc -c sem_game.c
+
+setup:
+	./control $(args)
 
 run:
-	./play
+	./a.out
 
 clean:
-	-rm -rf control play story.txt
-
-all:
-	make clean
-	make compile
-	./setup -r
-	./setup -c
-	make run
+	rm -rf *.o ./a.out control *.txt
+	
